@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Review Form Submition</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+  <style>
+    body {
+      width: auto;
+      height: auto;
+    }
+
+    /** Loader CSS **/
+
+    .lds-roller {
+      display: inline-block;
+      position: fixed;
+      top: 43%;
+      left: 46%;
+      width: 80px;
+      height: 80px;
+    }
+
+    .lds-roller div {
+      animation: lds-roller 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+      transform-origin: 40px 40px;
+    }
+
+    .lds-roller div:after {
+      content: " ";
+      display: block;
+      position: absolute;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #3f51b5;
+      margin: -4px 0 0 -4px;
+    }
+
+    .lds-roller div:nth-child(1) {
+      animation-delay: -0.036s;
+    }
+
+    .lds-roller div:nth-child(1):after {
+      top: 63px;
+      left: 63px;
+    }
+
+    .lds-roller div:nth-child(2) {
+      animation-delay: -0.072s;
+    }
+
+    .lds-roller div:nth-child(2):after {
+      top: 68px;
+      left: 56px;
+    }
+
+    .lds-roller div:nth-child(3) {
+      animation-delay: -0.108s;
+    }
+
+    .lds-roller div:nth-child(3):after {
+      top: 71px;
+      left: 48px;
+    }
+
+    .lds-roller div:nth-child(4) {
+      animation-delay: -0.144s;
+    }
+
+    .lds-roller div:nth-child(4):after {
+      top: 72px;
+      left: 40px;
+    }
+
+    .lds-roller div:nth-child(5) {
+      animation-delay: -0.18s;
+    }
+
+    .lds-roller div:nth-child(5):after {
+      top: 71px;
+      left: 32px;
+    }
+
+    .lds-roller div:nth-child(6) {
+      animation-delay: -0.216s;
+    }
+
+    .lds-roller div:nth-child(6):after {
+      top: 68px;
+      left: 24px;
+    }
+
+    .lds-roller div:nth-child(7) {
+      animation-delay: -0.252s;
+    }
+
+    .lds-roller div:nth-child(7):after {
+      top: 63px;
+      left: 17px;
+    }
+
+    .lds-roller div:nth-child(8) {
+      animation-delay: -0.288s;
+    }
+
+    .lds-roller div:nth-child(8):after {
+      top: 56px;
+      left: 12px;
+    }
+
+    @keyframes lds-roller {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    /** end of loader css **/
+    #app {
+      margin: 20px;
+    }
+
+    .primary span {
+      display: block
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app" class="container">
+    <div class="lds-roller" v-if="loader">
+      <div></div>
+      <div></div>
+      <div></div>
+      <div></div>
+      <div></div>
+      <div></div>
+      <div></div>
+      <div></div>
+    </div>
+    <div class="review-container" v-if="!loader">
+      <article class="message is-info">
+        <div class="message-header">
+          <p>Basic Info</p>
+        </div>
+        <div class="primary message-body">
+          <span> <strong>Application No:</strong> {{ formData.applicationNo }}</span>
+          <span> <strong>Application Type:</strong> {{ formData.applicationType }}</span>
+          <span> <strong>Membership Type:</strong> {{ formData.membershipType }}</span>
+          <span v-if="formData.applicationType != 'new'"> <strong>Membership No: </strong> {{
+            formData.existingMemberNumber }}</span>
+          <span> <strong>Application Date:</strong> {{ new Date(formData.applicationDate).toString() }}</span>
+          <span> <strong>Application Effective Date:</strong> {{ new Date(formData.applicationEffectiveDate).toString()
+            }}</span>
+        </div>
+      </article>
+
+      <article class="message is-info">
+        <div class="message-header">
+          <p>Primary Member</p>
+        </div>
+        <div class="primary message-body">
+          <span> <strong>Primary Member:</strong> {{ formData.primaryMember.firstName + ' ' + formData.primaryMember.mi
+            + ' ' + formData.primaryMember.lastName }}</span>
+          <span> <strong>Primary Address:</strong> {{ formData.residenceAddress.address1 + ' ' +
+            formData.residenceAddress.address1 }} City- {{formData.residenceAddress.city}} State-
+            {{formData.residenceAddress.state}} Zip- {{formData.residenceAddress.zip}}</span>
+          <span> <strong>Mailing Address:</strong> {{ formData.mailingAddress.address1 + ' ' +
+            formData.mailingAddress.address1 }} City- {{formData.mailingAddress.city}} State-
+            {{formData.mailingAddress.state}} Zip- {{formData.mailingAddress.zip}}</span>
+        </div>
+      </article>
+
+      <article class="message is-info" v-if="formData.companions.length > 0">
+        <div class="message-header">
+          <p>Companions</p>
+        </div>
+        <div class="primary message-body">
+          <span v-for="companion in formData.companions">
+            {{ companion.firstName + ' ' + companion.mi
+            + ' ' + companion.lastName }}</span>
+          </span>
+        </div>
+      </article>
+
+      <article class="message is-info">
+        <div class="message-header">
+          <p>Billing Info</p>
+        </div>
+        <div class="primary message-body">
+          <span> <strong>Billling Cycle:</strong> {{ formData.billingCycle }}</span>
+          <span> <strong>Payment Method:</strong> {{ formData.payment.method }}</span>
+          <span v-if="formData.payment.method.toLowerCase() == 'check'"> <strong>Member Check No:</strong> {{ formData.payment.memberCheckNo }}</span>
+          <span v-if="formData.payment.method.toLowerCase() == 'check'"> <strong>Check Date:</strong> {{ new Date(formData.payment.checkDate).toString() }}</span>
+          <span v-if="formData.payment.method.toLowerCase() == 'check'"> <strong>Name:</strong> {{ formData.payment.name }}</span>
+        </div>
+      </article>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+  <script type="text/javascript">
+    (function (params) {
+      const app = new Vue({
+        el: '#app',
+        data() {
+          return {
+            formData: {},
+            loader: true
+          }
+        },
+        mounted() {
+          window.addEventListener('message', (event) => {
+            this.formData = JSON.parse(event.data);
+            console.log('Data', JSON.stringify(this.formData));
+            this.loader = false;
+          });
+        },
+        unmounted() {
+          window.removeEventListener('message');
+        }
+      });
+    })()
+  </script>
+
+</body>
+
+</html>
