@@ -84,7 +84,8 @@ const TABS_CONTROLLER = {
 $w.onReady(function () {
 
     autorun(() => {
-        $w(`#newMemberRegistrationBox`).changeState(state.formState)
+        $w(`#newMemberRegistrationBox`).changeState(state.formState);
+        $w('#errorMessage').collapse();
         $w("#anchor1").scrollTo();
     })
 
@@ -230,7 +231,16 @@ export function basicInfoContinue_click(event) {
     state.formData.applicationDate = $w('#appDate').value;
     state.formData.applicationEffectiveDate = $w('#appEffectiveDate').value;
     state.formData.existingMemberNumber = $w('#inputMemberNumber').value.trim();
-    state.formState = FORM_STATES.FRESH_PRIMARY_MEMBER_INFO;
+
+    // validation check
+    const isValid = $w('#appNumber').valid && $w('#salesRepId').valid && $w('#appType').valid 
+    &&  $w('#membershipType').valid && $w('#appDate').valid && $w('#appEffectiveDate').valid && $w('#inputMemberNumber').valid
+    console.log('is valid', isValid);
+    if(isValid) {
+        state.formState = FORM_STATES.FRESH_PRIMARY_MEMBER_INFO;
+    } else {
+        $w('#errorMessage').expand();
+    }
     console.log('State', state);
 }
 
@@ -398,3 +408,21 @@ export function validateApplicationInfo() {
     }
     return isValid;
 }
+
+// validation
+const validateSalesRep = (salesRepElementId) => (value, reject) => {
+    let salesRepElement = $w(salesRepElementId);
+    if (salesRepElement.value == 'test') {
+        salesRepElement.validity.valid = true;
+        salesRepElement.resetValidityIndication();
+        return;
+    } else {
+        // error
+        salesRepElement.validity.valid = false;
+        salesRepElement.updateValidityIndication();
+        reject("Sales Rep Id not found");
+    }
+
+};
+
+$w("#salesRepId").onCustomValidation(validateSalesRep("#salesRepId"));
