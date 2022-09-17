@@ -2,16 +2,6 @@ import { FORM_STATES } from 'public/formStates.js'
 import { autorun, observable } from 'mobx';
 import { verifySalesRep, getMembershipCost } from 'backend/mebership.jsw';
 
-/*
-Reminder Niraj
-All data needs to be saved to a dataset in the Wix Content Manager
-*/
-
-/* 
-State - salesRepInfo
-Sales Rep ID should have validation regex of AA11 and tie to sales rep dataset
-*/
-
 const state = observable({
     formState: FORM_STATES.BASIC_INFO,
     formError: false,
@@ -47,6 +37,8 @@ const state = observable({
         billingCycle: '',
         payment: {
             method: '',
+            enrollmentFee: '$0',
+            membershipFee: '$0',
             memberCheckNo: '',
             checkDate: '',
             name: ''
@@ -235,9 +227,7 @@ export function basicInfoContinue_click(event) {
     state.formData.existingMemberNumber = $w('#inputMemberNumber').value.trim();
 
     // validation check
-    const isValid = $w('#appNumber').valid && $w('#salesRepId').valid && $w('#appType').valid &&
-        $w('#membershipType').valid && $w('#appDate').valid && $w('#appEffectiveDate').valid && $w('#inputMemberNumber').valid
-    console.log('is valid', isValid);
+    const isValid = validateApplicationInfo();
     if (isValid) {
         state.formState = FORM_STATES.FRESH_PRIMARY_MEMBER_INFO;
     } else {
@@ -402,13 +392,17 @@ export function reviewBackBtn_click(event) {
 export function validateApplicationInfo() {
     let isValid = false;
     if (state.formData.applicationNo.trim() !== '' && state.formData.salesRepId.trim() !== '' && state.formData.applicationType.trim() !== '' &&
-        state.formData.membershipType.trim() !== '' && state.formData.existingMemberNumber.trim() == '') {
+        state.formData.membershipType.trim() !== '') {
+            console.log('condition 1');
         isValid = true;
         if (state.formData.applicationType.toLowerCase().trim() !== 'new' && state.formData.existingMemberNumber.trim() !== '') {
+            console.log('condition 2');
             isValid = true;
         } else if (state.formData.applicationType.toLowerCase().trim() == 'new' && state.formData.existingMemberNumber.trim() == '') {
+            console.log('conditino 3');
             isValid = true;
         } else {
+            console.log('condition 4');
             isValid = false;
         }
     }
