@@ -1,5 +1,6 @@
 import { FORM_STATES } from 'public/formStates.js'
 import { autorun, observable } from 'mobx';
+import { verifySalesRep, getMembershipCost } from 'backend/mebership.jsw';
 
 /*
 Reminder Niraj
@@ -20,6 +21,7 @@ const state = observable({
         applicationType: '', // new | renewal | addon
         existingMemberNumber: '',
         membershipType: '',
+        group: '',
         applicationDate: '',
         applicationEffectiveDate: '',
         primaryMember: {
@@ -233,10 +235,10 @@ export function basicInfoContinue_click(event) {
     state.formData.existingMemberNumber = $w('#inputMemberNumber').value.trim();
 
     // validation check
-    const isValid = $w('#appNumber').valid && $w('#salesRepId').valid && $w('#appType').valid 
-    &&  $w('#membershipType').valid && $w('#appDate').valid && $w('#appEffectiveDate').valid && $w('#inputMemberNumber').valid
+    const isValid = $w('#appNumber').valid && $w('#salesRepId').valid && $w('#appType').valid &&
+        $w('#membershipType').valid && $w('#appDate').valid && $w('#appEffectiveDate').valid && $w('#inputMemberNumber').valid
     console.log('is valid', isValid);
-    if(isValid) {
+    if (isValid) {
         state.formState = FORM_STATES.FRESH_PRIMARY_MEMBER_INFO;
     } else {
         $w('#errorMessage').expand();
@@ -285,7 +287,7 @@ export function companionBackBtn_click(event) {
     state.formState = FORM_STATES.FRESH_PRIMARY_MEMBER_INFO;
 }
 
-export function billingContinnueBtn_click(event) {
+export async function billingContinnueBtn_click(event) {
     state.formData.billingCycle = $w('#billingCycleDD').value.trim();
     state.formData.payment = {
         method: $w('#radioMemberPaymentType').value.trim(),
@@ -294,6 +296,8 @@ export function billingContinnueBtn_click(event) {
         name: $w('#inputName').value.trim()
     }
     state.formData.additionalInfo = $w('#additionalInfoTxt').value.trim();
+    const membershipCost = await getMembershipCost(state.formData);
+    console.log('Cost', membershipCost);
     console.log('State', state);
     state.formState = FORM_STATES.REVIEW
     setTimeout(() => {
@@ -402,6 +406,8 @@ export function validateApplicationInfo() {
         isValid = true;
         if (state.formData.applicationType.toLowerCase().trim() !== 'new' && state.formData.existingMemberNumber.trim() !== '') {
             isValid = true;
+        } else if (state.formData.applicationType.toLowerCase().trim() == 'new' && state.formData.existingMemberNumber.trim() == '') {
+            isValid = true;
         } else {
             isValid = false;
         }
@@ -410,9 +416,11 @@ export function validateApplicationInfo() {
 }
 
 // validation
-const validateSalesRep = (salesRepElementId) => (value, reject) => {
+const validateSalesRep = (salesRepElementId) => async (value, reject) => {
     let salesRepElement = $w(salesRepElementId);
-    if (salesRepElement.value == 'test') {
+    const data = await verifySalesRep(value);
+    console.log('data', data.length);
+    if (data.length > 0) {
         salesRepElement.validity.valid = true;
         salesRepElement.resetValidityIndication();
         return;
@@ -422,7 +430,6 @@ const validateSalesRep = (salesRepElementId) => (value, reject) => {
         salesRepElement.updateValidityIndication();
         reject("Sales Rep Id not found");
     }
-
 };
 
 $w("#salesRepId").onCustomValidation(validateSalesRep("#salesRepId"));
