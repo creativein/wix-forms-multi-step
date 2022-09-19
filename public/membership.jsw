@@ -1,0 +1,52 @@
+import { MEMBERSHIP_TYPES, APPLICATION_KIND, BILLING_PERIOD } from 'public/membershipType.js';
+import wixData from 'wix-data';
+
+export async function getMembershipCost(data) {
+
+    const fee = {
+        'enrollmentFee': '$0',
+        'membershipFee': '$0'
+    };
+
+    try {
+        const membershipType = data.membershipType.trim(); // Standard | Deluxe
+        const applicationType = data.applicationType.toLowerCase().trim(); // new | renewal | add-on
+        const billingCycle = data.billingCycle.trim(); // Monthly | Annual
+
+        const queryResult = await wixData.query('MemberPricing').eq('memberType', membershipType).and(wixData.query('MemberPricing').eq('billingPeriod', billingCycle)).find();
+
+        const items = queryResult.items;
+
+        if (queryResult.length > 0) {
+            if (applicationType == 'new') {
+                const matched = items.filter(item => item.title.includes('Primary'));
+                fee.enrollmentFee = matched[0]['enrollmentFee'];
+                const memberShipFee = billingCycle == 'Annual' ? matched[0]['annualRate'] : matched[0]['3MonthRate'];
+                fee.membershipFee = memberShipFee;
+
+            } else {
+                const matched = items.filter(item => item.title.includes('Companion'));
+                const memberShipFee = billingCycle == 'Annual' ? matched[0]['annualRate'] : matched[0]['3MonthRate'];
+                fee.enrollmentFee = `$0`;
+                fee.membershipFee = memberShipFee;
+            }
+        } else {
+            fee.enrollmentFee = `$0`;
+            fee.membershipFee = `$0`;
+        }
+
+    } catch (error) {
+        fee.enrollmentFee = `$0`;
+        fee.membershipFee = `$0`;
+    }
+
+    return fee
+
+}
+
+export async function verifySalesRep(salesRepId) {
+    const queryResult = await wixData.query("SalesReps")
+        .eq('salesRepId', salesRepId)
+        .find();
+    return queryResult;
+}
