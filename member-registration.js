@@ -1,6 +1,7 @@
 import { FORM_STATES } from 'public/formStates.js'
 import { autorun, observable } from 'mobx';
 import { verifySalesRep, getMembershipCost } from 'backend/mebership.jsw';
+import wixLocation from 'wix-location';
 
 const state = observable({
     formState: FORM_STATES.BASIC_INFO,
@@ -47,34 +48,6 @@ const state = observable({
     }
 });
 
-const TABS_CONTROLLER = {
-    primaryColor: `#000000`,
-    activeColor: `#FF4040`,
-    tabs: ["setupTab", "membersTab", "billingTab", "reviewTab", "submitTab"],
-    init: () => {
-        /** Click Handlers for Tabs */
-        const selector = TABS_CONTROLLER.tabs.reduce((a, c) => a + `#${c},`, "");
-        $w(selector).onClick(event => {
-            // TABS_CONTROLLER.tabs.forEach(e => $w("#" + e).style.backgroundColor = TABS_CONTROLLER.primaryColor);
-            // $w("#" + event.target.id).style.backgroundColor = TABS_CONTROLLER.activeColor;
-        })
-        /*
-        $w("#setupTab").onClick(() => {
-            state.formState = FORM_STATES.BASIC_INFO;
-        });
-        $w("#membersTab").onClick(() => {
-            state.formState = FORM_STATES.FRESH_PRIMARY_MEMBER_INFO;
-        });
-        $w("#billingTab").onClick(() => {
-            state.formState = FORM_STATES.BILLING_INFO;
-        });
-        $w("#reviewTab").onClick(() => {
-            state.formState = FORM_STATES.REVIEW;
-        });
-        */
-    }
-}
-
 $w.onReady(function () {
 
     autorun(() => {
@@ -106,10 +79,15 @@ $w.onReady(function () {
             $w("#inputMemberNumber").value = '';
             $w("#inputMemberNumber").required = false;
             $w("#inputMemberNumber").resetValidityIndication();
+            $w('#groupAddCompanions').expand();
+        }
+
+        if(memberNumber == 'renewal') {
+            $w('#groupAddCompanions').collapse();
         }
     });
 
-    TABS_CONTROLLER.init();
+    $w("#salesRepId").onCustomValidation(validateSalesRep("#salesRepId"));
 
 });
 
@@ -222,6 +200,7 @@ export function basicInfoContinue_click(event) {
     state.formData.salesRepId = $w('#salesRepId').value.trim();
     state.formData.applicationType = $w('#appType').value.trim();
     state.formData.membershipType = $w('#membershipType').value.trim();
+    state.formData.group = $w('#groupDD').value.trim();
     state.formData.applicationDate = $w('#appDate').value;
     state.formData.applicationEffectiveDate = $w('#appEffectiveDate').value;
     state.formData.existingMemberNumber = $w('#inputMemberNumber').value.trim();
@@ -286,13 +265,18 @@ export async function billingContinnueBtn_click(event) {
         name: $w('#inputName').value.trim()
     }
     state.formData.additionalInfo = $w('#additionalInfoTxt').value.trim();
-    const membershipCost = await getMembershipCost(state.formData);
-    console.log('Cost', membershipCost);
+    const fee = await getMembershipCost(state.formData);
+    console.log('Cost', fee);
+    state.formData.payment.enrollmentFee = fee.enrollmentFee;
+    state.formData.payment.membershipFee = fee.membershipFee;
     console.log('State', state);
     state.formState = FORM_STATES.REVIEW
     setTimeout(() => {
         const data = state.formData;
-        $w('#reviewWindow').postMessage(JSON.stringify(data));
+        $w('#reviewWindow').postMessage(JSON.stringify({
+            action: 'review',
+            data
+        }));
     }, 1000);
 }
 
@@ -344,7 +328,8 @@ export function submitForm() {
         paymentInfo: {},
         additionalInfo: state.formData.additionalInfo,
         applicationDate: state.formData.applicationDate,
-        applicationEffectiveDate: state.formData.applicationEffectiveDate
+        applicationEffectiveDate: state.formData.applicationEffectiveDate,
+        group: state.formData.group
     };
     if (data.paymentMethod == 'Check') {
         data.paymentInfo = {
@@ -359,7 +344,7 @@ export function submitForm() {
         $w('#datasetNewMemberRegistration').save()
             .then((item) => {
                 console.log('Saved Item');
-                console.log(item);
+                wixLocation.to("/");
             })
             .catch((err) => {
                 console.log('Save Error', err);
@@ -391,9 +376,8 @@ export function reviewBackBtn_click(event) {
 
 export function validateApplicationInfo() {
     let isValid = false;
-    if (state.formData.applicationNo.trim() !== '' && state.formData.salesRepId.trim() !== '' && state.formData.applicationType.trim() !== '' &&
-        state.formData.membershipType.trim() !== '') {
-            console.log('condition 1');
+    if (state.formData.applicationNo.trim() !== '' && state.formData.salesRepId.trim() !== '' && state.formData.applicationType.trim() !== '' && $w('#salesRepId').valid && $w('#groupDD').valid && state.formData.membershipType.trim() !== '') {
+        console.log('condition 1');
         isValid = true;
         if (state.formData.applicationType.toLowerCase().trim() !== 'new' && state.formData.existingMemberNumber.trim() !== '') {
             console.log('condition 2');
@@ -426,4 +410,3 @@ const validateSalesRep = (salesRepElementId) => async (value, reject) => {
     }
 };
 
-$w("#salesRepId").onCustomValidation(validateSalesRep("#salesRepId"));
